@@ -339,7 +339,7 @@ export default async function ProviderProfilePage({ params }: ProviderProfilePag
                             fill
                             className="object-cover"
                           />
-                          {proj.verificationStatus === "VERIFIED" && (
+                          {proj.verificationStatus === "APPROVED" && (
                             <div className="absolute top-2 right-2 bg-emerald-600 text-white text-[10px] font-bold px-2 py-0.5 rounded-full flex items-center gap-1 shadow-sm">
                               <ShieldCheck className="w-3 h-3" />
                               <span>Verified Work</span>

@@ -269,7 +269,7 @@ async function main() {
           "https://images.unsplash.com/photo-1621905251189-08b45d6a269e?w=800",
           "https://images.unsplash.com/photo-1581092160607-ee22621dd758?w=800",
         ],
-        verificationStatus: VerificationStatus.VERIFIED,
+        verificationStatus: VerificationStatus.APPROVED,
       },
       {
         providerId: pRamesh.id,
@@ -281,7 +281,7 @@ async function main() {
         description: "Compressor valve replacement and R410A balanced charging for a 10HP system.",
         workPerformed: "Compressor diagnosis, copper brazing under nitrogen purge, sensor calibration.",
         mediaUrls: ["https://images.unsplash.com/photo-1581092335397-9583fe92d232?w=800"],
-        verificationStatus: VerificationStatus.VERIFIED,
+        verificationStatus: VerificationStatus.APPROVED,
       },
     ],
   });
@@ -490,7 +490,7 @@ async function main() {
           "https://images.unsplash.com/photo-1600585154340-be6161a56a0c?w=800",
           "https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?w=800",
         ],
-        verificationStatus: VerificationStatus.VERIFIED,
+        verificationStatus: VerificationStatus.APPROVED,
       },
       {
         providerId: pContractor.id,
@@ -505,7 +505,7 @@ async function main() {
         mediaUrls: [
           "https://images.unsplash.com/photo-1512917774080-9991f1c4c750?w=800",
         ],
-        verificationStatus: VerificationStatus.VERIFIED,
+        verificationStatus: VerificationStatus.APPROVED,
       },
     ],
   });

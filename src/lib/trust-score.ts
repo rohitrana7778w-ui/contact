@@ -78,7 +78,7 @@ export async function calculateTrustScore(providerId: string): Promise<TrustScor
 
   // 7. Portfolio Quality (max 15)
   // Verified projects with media photos
-  const verifiedProjects = provider.portfolio.filter((p) => p.verificationStatus === "APPROVED" || p.verificationStatus === "VERIFIED");
+  const verifiedProjects = provider.portfolio.filter((p) => p.verificationStatus === "APPROVED");
   let portfolioScore = 0;
   if (verifiedProjects.length >= 3) portfolioScore = 15;
   else if (verifiedProjects.length >= 1) portfolioScore = 10;
