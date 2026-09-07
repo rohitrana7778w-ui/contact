@@ -18,11 +18,13 @@ interface SearchPageProps {
   };
 }
 
+export const dynamic = "force-dynamic";
+
 export default async function SearchPage({ searchParams }: SearchPageProps) {
   const q = searchParams.q?.trim() || "";
   const categorySlug = searchParams.category || "";
   const type = searchParams.type as ProviderType | undefined;
-  const minTrust = parseInt(searchParams.minTrust || "0", 10);
+  const minTrust = Number.parseInt(searchParams.minTrust || "0", 10) || 0;
   const availability = searchParams.availability as AvailabilityStatus | undefined;
   const locality = searchParams.locality || "";
   const sort = searchParams.sort || "trust";

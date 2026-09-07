@@ -28,6 +28,8 @@ import { RatingStars } from "@/components/rating-stars";
 import { ProviderProfileActions } from "@/components/provider-profile-actions";
 import { formatPrice, formatDate } from "@/lib/utils";
 
+export const dynamic = "force-dynamic";
+
 interface ProviderProfilePageProps {
   params: {
     slug: string;
@@ -35,17 +37,24 @@ interface ProviderProfilePageProps {
 }
 
 export async function generateMetadata({ params }: ProviderProfilePageProps) {
-  const provider = await prisma.provider.findUnique({
-    where: { slug: params.slug },
-    select: { businessName: true, description: true, locality: true },
-  });
+  try {
+    const provider = await prisma.provider.findUnique({
+      where: { slug: params.slug },
+      select: { businessName: true, description: true, locality: true },
+    });
 
-  if (!provider) return { title: "Provider Not Found — TrustLocal" };
+    if (!provider) return { title: "Provider Not Found — TrustLocal" };
 
-  return {
-    title: `${provider.businessName} — Verified Skilled Services in Dehradun | TrustLocal`,
-    description: provider.description.slice(0, 160),
-  };
+    return {
+      title: `${provider.businessName} — Verified Skilled Services in Dehradun | TrustLocal`,
+      description: provider.description.slice(0, 160),
+    };
+  } catch {
+    return {
+      title: "Service Provider — TrustLocal Dehradun",
+      description: "Find verified skilled tradespeople and contractors in Dehradun.",
+    };
+  }
 }
 
 export default async function ProviderProfilePage({ params }: ProviderProfilePageProps) {
