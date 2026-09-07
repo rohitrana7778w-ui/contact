@@ -1,0 +1,344 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  CUSTOMER
+  PROVIDER
+  ADMIN
+}
+
+enum ProviderType {
+  INDIVIDUAL
+  SHOP
+  COMPANY
+  CONTRACTOR
+}
+
+enum AvailabilityStatus {
+  AVAILABLE
+  ACCEPTING
+  BUSY
+  UNAVAILABLE
+}
+
+enum VerificationType {
+  PHONE
+  IDENTITY
+  LOCATION
+  EXPERIENCE
+  WORK
+  CUSTOMER
+  BUSINESS
+}
+
+enum VerificationStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+enum ComplaintCategory {
+  FAKE_IDENTITY
+  FAKE_BUSINESS
+  FAKE_PORTFOLIO
+  FAKE_REVIEWS
+  FRAUD
+  POOR_BEHAVIOUR
+  POOR_QUALITY
+}
+
+enum ComplaintStatus {
+  OPEN
+  IN_REVIEW
+  RESOLVED
+  REJECTED
+}
+
+enum ContactType {
+  CALL
+  WHATSAPP
+}
+
+model User {
+  id             String    @id @default(cuid())
+  email          String    @unique
+  hashedPassword String
+  name           String
+  phone          String?
+  avatar         String?
+  role           Role      @default(CUSTOMER)
+  emailVerified  DateTime?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  provider       Provider?
+  reviews        Review[]
+  complaints     Complaint[] @relation("CustomerComplaints")
+  savedProviders SavedProvider[]
+  contactEvents  ContactEvent[]
+}
+
+model Provider {
+  id                String             @id @default(cuid())
+  userId            String             @unique
+  user              User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  type              ProviderType       @default(INDIVIDUAL)
+  businessName      String
+  slug              String             @unique
+  description       String             @db.Text
+  avatarUrl         String?
+  coverUrl          String?
+
+  // Location
+  city              String             @default("Dehradun")
+  locality          String?            // e.g., Rajpur Road, Jakhan, Clement Town
+  address           String?
+  serviceArea       String             // Comma-separated or descriptive: "Within 15km, Rajpur Road, Sahastradhara"
+  latitude          Float?
+  longitude         Float?
+
+  // Professional details
+  experienceYears   Int                @default(1)
+  specializations   String[]           @default([])
+  languages         String[]           @default(["Hindi", "English"])
+
+  // Pricing: stored as structured JSON
+  // { startingPrice: 300, visitCharge: 150, hourlyRate: 200, pricingType: "LABOUR_ONLY", notes: "Parts extra" }
+  pricing           Json?
+
+  // Availability & Operations
+  availability      AvailabilityStatus @default(AVAILABLE)
+  workingHours      Json?              // { mon: "9:00 AM - 7:00 PM", ... }
+  emergencyService  Boolean            @default(false)
+
+  // Performance & Stats
+  completedJobsCount Int               @default(0)
+  trustScore        Int                @default(20) // 0 - 100
+  isApproved        Boolean            @default(false)
+  isActive          Boolean            @default(true)
+  featured          Boolean            @default(false)
+
+  createdAt         DateTime           @default(now())
+  updatedAt         DateTime           @updatedAt
+
+  // Relations
+  services          ProviderService[]
+  portfolio         PortfolioProject[]
+  reviews           Review[]
+  verifications     Verification[]
+  trustScoreLogs    TrustScoreLog[]
+  complaints        Complaint[]
+  contactEvents     ContactEvent[]
+  savedBy           SavedProvider[]
+
+  @@index([city, type])
+  @@index([trustScore])
+  @@index([isApproved, isActive])
+}
+
+model Category {
+  id          String     @id @default(cuid())
+  name        String     @unique
+  slug        String     @unique
+  description String?    @db.Text
+  icon        String?    // Lucide icon name, e.g. "Zap", "Wrench", "Hammer"
+  sortOrder   Int        @default(0)
+
+  parentId    String?
+  parent      Category?  @relation("SubCategories", fields: [parentId], references: [id], onDelete: Cascade)
+  children    Category[] @relation("SubCategories")
+
+  services    Service[]
+
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+}
+
+model Service {
+  id          String            @id @default(cuid())
+  name        String
+  slug        String            @unique
+  description String?
+  categoryId  String
+  category    Category          @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  keywords    String[]          @default([]) // "ac repair, cooling problem, gas leak"
+
+  providers   ProviderService[]
+  reviews     Review[]
+
+  createdAt   DateTime          @default(now())
+  updatedAt   DateTime          @updatedAt
+
+  @@index([categoryId])
+}
+
+model ProviderService {
+  id          String   @id @default(cuid())
+  providerId  String
+  serviceId   String
+  customPrice Float?
+  notes       String?
+
+  provider    Provider @relation(fields: [providerId], references: [id], onDelete: Cascade)
+  service     Service  @relation(fields: [serviceId], references: [id], onDelete: Cascade)
+
+  createdAt   DateTime @default(now())
+
+  @@unique([providerId, serviceId])
+  @@index([providerId])
+  @@index([serviceId])
+}
+
+model PortfolioProject {
+  id                 String             @id @default(cuid())
+  providerId         String
+  provider           Provider           @relation(fields: [providerId], references: [id], onDelete: Cascade)
+
+  title              String
+  projectType        String             // e.g. "Full House Wiring", "Split AC Installation"
+  locality           String?            // e.g. "Dalanwala, Dehradun"
+  year               Int?
+  approxArea         String?            // e.g. "1800 sq ft"
+  approxBudget       Float?             // in INR
+  description        String             @db.Text
+  workPerformed      String?            @db.Text
+
+  mediaUrls          String[]           @default([])
+  beforeAfterUrls    Json?              // { before: "url", after: "url" }
+  customerFeedback   String?            @db.Text
+
+  verificationStatus VerificationStatus @default(PENDING)
+  verifiedAt         DateTime?
+
+  createdAt          DateTime           @default(now())
+  updatedAt          DateTime           @updatedAt
+
+  @@index([providerId])
+}
+
+model Review {
+  id                  String   @id @default(cuid())
+  customerId          String
+  customer            User     @relation(fields: [customerId], references: [id], onDelete: Cascade)
+
+  providerId          String
+  provider            Provider @relation(fields: [providerId], references: [id], onDelete: Cascade)
+
+  serviceId           String?
+  service             Service? @relation(fields: [serviceId], references: [id], onDelete: SetNull)
+
+  overallRating       Int      // 1 to 5
+  qualityRating       Int?     // 1 to 5
+  behaviorRating      Int?     // 1 to 5
+  pricingRating       Int?     // 1 to 5
+  timelinessRating    Int?     // 1 to 5
+  communicationRating Int?     // 1 to 5
+
+  text                String   @db.Text
+  isVerified          Boolean  @default(false) // Verified that work actually occurred
+
+  providerResponse    String?  @db.Text
+  providerRespondedAt DateTime?
+
+  reportCount         Int      @default(0)
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+
+  @@index([providerId])
+  @@index([customerId])
+}
+
+model Verification {
+  id         String             @id @default(cuid())
+  providerId String
+  provider   Provider           @relation(fields: [providerId], references: [id], onDelete: Cascade)
+
+  type       VerificationType
+  status     VerificationStatus @default(PENDING)
+  evidence   String?            @db.Text // Document details, ID reference, notes
+  docUrl     String?            // Uploaded document URL
+  notes      String?            @db.Text
+  reviewedBy String?            // Admin user id
+  reviewedAt DateTime?
+
+  createdAt  DateTime           @default(now())
+  updatedAt  DateTime           @updatedAt
+
+  @@unique([providerId, type])
+  @@index([providerId])
+}
+
+model TrustScoreLog {
+  id           String   @id @default(cuid())
+  providerId   String
+  provider     Provider @relation(fields: [providerId], references: [id], onDelete: Cascade)
+  score        Int      // 0 - 100
+  components   Json     // { profileCompleteness: 10, identity: 10, phone: 5, ... }
+  calculatedAt DateTime @default(now())
+
+  @@index([providerId])
+}
+
+model Complaint {
+  id          String            @id @default(cuid())
+  reporterId  String
+  reporter    User              @relation("CustomerComplaints", fields: [reporterId], references: [id], onDelete: Cascade)
+
+  providerId  String
+  provider    Provider          @relation(fields: [providerId], references: [id], onDelete: Cascade)
+
+  category    ComplaintCategory
+  description String            @db.Text
+  evidence    String[]          @default([])
+
+  status      ComplaintStatus   @default(OPEN)
+  resolution  String?           @db.Text
+  adminId     String?
+  resolvedAt  DateTime?
+
+  createdAt   DateTime          @default(now())
+  updatedAt   DateTime          @updatedAt
+
+  @@index([providerId])
+  @@index([status])
+}
+
+model ContactEvent {
+  id         String      @id @default(cuid())
+  providerId String
+  provider   Provider    @relation(fields: [providerId], references: [id], onDelete: Cascade)
+
+  customerId String?
+  customer   User?       @relation(fields: [customerId], references: [id], onDelete: SetNull)
+
+  type       ContactType
+  createdAt  DateTime    @default(now())
+
+  @@index([providerId, type])
+  @@index([createdAt])
+}
+
+model SavedProvider {
+  id         String   @id @default(cuid())
+  customerId String
+  customer   User     @relation(fields: [customerId], references: [id], onDelete: Cascade)
+
+  providerId String
+  provider   Provider @relation(fields: [providerId], references: [id], onDelete: Cascade)
+
+  createdAt  DateTime @default(now())
+
+  @@unique([customerId, providerId])
+  @@index([customerId])
+  @@index([providerId])
+}
